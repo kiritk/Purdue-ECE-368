@@ -1,0 +1,188 @@
+  1 #include <stdio.h>
+  2 #include <stdlib.h>
+  3 #include <math.h>
+  4 #include "sorting.h"
+  5 
+  6 int* seq_1_gen(int N, int* Size);
+  7 int* seq_2_gen(int N, int* Size);
+  8 
+  9 long *Load_File(char *Filename, int *Size){
+ 10     long *array = NULL;
+ 11     *Size = 0;
+ 12 
+ 13     FILE* fp = fopen(Filename, "r"); //open the file and begin reading the contents
+ 14     fscanf(fp, "%d", Size);
+ 15     if (*Size == 0){ //check to ensure that the file is not empty
+ 16         *Size = 0;
+ 17         fclose(fp);
+ 18         return NULL;
+ 19     }
+ 20     array = malloc(sizeof(*array) * (*Size)); //create space for the array from the file
+ 21     int i;
+ 22     for (i = 0; i < (*Size); ++i){ //scan in values from the file into the array
+ 23         fscanf(fp, "%ld", array + i);
+ 24     }
+ 25 
+ 26     fclose(fp);
+ 27     return array; //return the array with values from the file 
+ 28 }
+ 29 
+ 30 int Save_File(char *Filename, long *Array, int Size){
+ 31     FILE* fp = fopen(Filename, "w"); //open the file and begin to write to it
+ 32     int size_of = Size;
+ 33     int i;
+ 34     for (i = 0; i < size_of; i++){
+ 35         fprintf(fp, "%ld \n", Array[i]); //write the elements from the array to the file
+ 36     }
+ 37 
+ 38     fclose(fp);
+ 39     return size_of; //return the size of the file 
+ 40 }
+ 41 
+ 42 void Shell_Insertion_Sort(long *Array, int Size, double *NComp, double *NMove){
+ 43     int gap_size = 0; //initialize the size of the gap sequence to 0
+ 44     int* gap_sequence = seq_1_gen(Size, &gap_size); //call my gap sequence generator function 
+ 45 
+ 46     int i;  //variable initializations
+ 47     int j;
+ 48     int k;
+ 49     int gap_count;
+ 50     long temp;
+ 51 
+ 52     for (i = (gap_size - 1); i >= 0; i--){
+ 53         gap_count = gap_sequence[i]; //set the first gap space to the last element from the gap sequence
+ 54         for (j = gap_count; j < Size; j++){
+ 55             temp = Array[j]; //set the temporary value to the gap space value of the array
+ 56             (*NMove)++; //first increment of move
+ 57             for (k = j;(k >= gap_count) && (Array[k - gap_count] > temp); k -= gap_count){  //this compares the current value t    o the others in the same gap group as this 
+ 58                 Array[k] = Array[k - gap_count]; //swap the value in the array with the larger one
+ 59                 (*NMove)++; //another increment of move
+ 60                 (*NComp) = (*NComp) + 2; //two comparisons because k >= and Array[k - gap_count] >
+ 61             }
+ 62             Array[k] = temp; //swap the value at this array point
+ 63             (*NMove)++; //increment move again
+ 64             if (k >= gap_count) { //increments the comparison if the value at k is greater than or equal to the gap space
+ 65                 (*NComp)++;
+ 66             }
+ 67         }
+ 68     }
+ 69     free(gap_sequence);
+ 70 }
+ 71 
+ 72 void Improved_Bubble_Sort(long *Array, int Size, double *NComp, double *NMove){
+ 73     int gap_size = 0;  //set size to 0
+ 74     int* gap_sequence = seq_2_gen(Size, &gap_size); //call the second gap generation function to get sequence
+ 75 
+ 76     int i;  //initialize variables for later use 
+ 77     int j;
+ 78     int k;
+ 79     int gap_count;
+ 80     long temp;
+ 81 
+ 82     for (i = 0; i < gap_size; i++){
+ 83         gap_count = gap_sequence[i]; //set the gap space to the first element of the gap sequence from the generator
+ 84         for (j = gap_count; j < Size; j++){
+ 85             for (k = j; (k >= gap_count) && (Array[k - gap_count] > Array[k]); k -= gap_count){
+ 86             temp = Array[k]; //standard swapping of two elements 
+ 87             Array[k] = Array[k - gap_count]; //''
+ 88             Array[k - gap_count] = temp; //''
+ 89 
+ 90             (*NMove) = (*NMove) + 3; //increment the number of moves by three because of three swapping calls
+ 91             (*NComp) = (*NComp) + 2; //increment comparisons by two because of the for loop conditions
+ 92             }
+ 93             if (k >= gap_count){
+ 94                 (*NComp)++;
+ 95             }
+ 96         }
+ 97     }
+ 98     free(gap_sequence);
+ 99 }
+100 
+101 void Save_Seq1 (char *Filename, int N){
+102     int size = 0; //initialize size to 0
+103     int* one = seq_1_gen(N, &size); //call the sequence generator to get the correct sequence
+104 
+105     FILE* fp = fopen(Filename, "w"); //open and begin writing to the file 
+106     fprintf(fp, "%d\n", N);
+107     int i;
+108     for (i = 0; i < size; i++){
+109         fprintf(fp, "%d\n", one[i]); //write to the file beginning with the first element of the sequence
+110     }
+111     fclose(fp);
+112 }
+113 
+114 void Save_Seq2 (char *Filename, int N){
+115     int size = 0; //initialize size to 0
+116     int* two = seq_2_gen(N, &size); //call the correct sequence generator 
+117 
+118     FILE* fp = fopen(Filename, "w"); //open and begin writing to the file 
+119     fprintf(fp, "%d\n", N);
+120 
+121     int size_increment = size - 1;
+122     int i;
+123     for (i = size_increment; i >= 0; i--){
+124         fprintf(fp, "%d\n", two[i]); //write to the file beginning with the last element of the sequence
+125     }
+126     fclose(fp);
+127 }
+128 
+129 int* seq_1_gen(int N, int*Size){
+130     int* one = malloc(sizeof(int) * N);
+131 
+132     int pt2 = 2; //initialization of variables 
+133     int pt3 = 2;
+134     int i;
+135     int pt2value;
+136     int pt3value;
+137 
+138     for (i = 0; i < 4; i++){ //set the first values of the sequence to 1,2,3,4 to focus on rest 
+139         one[i] = i + 1;
+140     }
+141     while (one[i-1] < N){ //check to make sure gap is less than size of the array 
+142         pt3value = one[pt3]*3; //increment by 3 -> 3^q
+143         pt2value = one[pt2]*2; //increment by 2 -> 2^p
+144         if (pt2value == one[i-1]){//check to make sure that new value of 2^p is equal to the previous 
+145             pt2++;
+146             continue;
+147         }
+148         else if (pt3value == one[i-1]){ //check to make sure that new value of 3^q is equal to the previous 
+149             pt3++;
+150             continue;
+151         }
+152         else if (pt2value < pt3value && pt2value > 0){ //check if pt2 value is les than p3 value and confirm that pt2 value is     greater than 0
+153             one[i] = pt2value; //set to this pt2 value 
+154             pt2++;
+155         }
+156         else if (pt3value > 0){
+157             one[i] = pt3value; //otherwise check to make sure that pt3value is greater than 0 and set it to p3 value
+158             pt3++;
+159         }
+160         i++;
+161     }
+162     *Size = i - 1; //size is always one extra, so we must subtract one to make it correct. 
+163 
+164     return one;
+165 }
+166 
+167 int* seq_2_gen(int N, int*Size){
+168     int* two = malloc(sizeof(int) * N); //create soace for the gap sequence. 
+169     int i = 0;
+170 
+171     do { //need to run through it first otherwise it would get stuck on two[] != 1
+172         N /= 1.3;  //floor it by value 1.3
+173         if (N == 9 || N == 10) { //check to make sure it isnt 9 or 10 and if it is, then set it to 11
+174             N = 11;
+175         }
+176         two[i] = N; //set this new value into the gap sequence 
+177         i++;
+178     } while (two[i - 1] != 1); //confirm that we haven't hit 1 yet
+179 
+180     *Size = i; //because of our do while format we dont have an extra i, so no need to subtract
+181     return two;
+182 }
+                                                                                                                
+                                                                                                                 
+                                                                                                                 
+                                                                                                              
+
+                                                                                                                 
